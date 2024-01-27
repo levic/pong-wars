@@ -63,8 +63,10 @@
       <canvas id="pongCanvas" width="800" height="800"></canvas>
       <div id="score"></div>
       <p id="made">
-        made by <a href="https://koenvangilst.nl">Koen van Gilst</a> with additions by <a href="https://www.levi.id.au/">Levi Cameron</a> <br/>
-        source on <a href="https://github.com/levic/pong-wars">github</a> | +/- to change speedFactorFactor
+        made by <a href="https://koenvangilst.nl">Koen van Gilst</a> with additions by <a href="https://www.levi.id.au/">Levi Cameron</a>
+        | source on <a href="https://github.com/levic/pong-wars">github</a>
+        <br/> +/- to change speed
+        | space to turn on/off ball speed renormalisation
       </p>
     </div>
   </body>
@@ -113,6 +115,12 @@
     let y2 = canvas.height / 2;
     let dx2 = -8;
     let dy2 = -8;
+
+    // Renormalise speed when it drifts more than
+    // ALLOWABLE_SPEED_DRIFT % away from the initial speed
+    let speedRenormalize = true;
+    const INITIAL_SPEED_SQUARED = dx1 * dx1 + dy1 * dy1;
+    const ALLOWABLE_SPEED_DRIFT = 0.1;
 
     function drawBall(x, y, color) {
       ctx.beginPath();
@@ -164,6 +172,19 @@
         }
       }
 
+      if (speedRenormalize) {
+        let speedSquared = updatedDx*updatedDx + updatedDy*updatedDy;
+        if (
+          (speedSquared < (INITIAL_SPEED_SQUARED / (1 + ALLOWABLE_SPEED_DRIFT))) ||
+          (speedSquared > (INITIAL_SPEED_SQUARED * (1 + ALLOWABLE_SPEED_DRIFT)))
+        ) {
+          let speed = Math.sqrt(speedSquared);
+          let initialSpeed = Math.sqrt(INITIAL_SPEED_SQUARED);
+          updatedDx *= initialSpeed / speed;
+          updatedDy *= initialSpeed / speed;
+        }
+      }
+
       return { dx: updatedDx, dy: updatedDy };
     }
 
@@ -186,13 +207,22 @@
       const options = { style: 'decimal', maximumFractionDigits: 0 };
       const fmtIters = iterations.toLocaleString('en-US', options);
       const fmtSpeedFactor = speedFactor.toLocaleString('en-US', options);
-      scoreElement.textContent = `day ${team1Score} | night ${team2Score} | ${fmtSpeedFactor}x speed | iters ${fmtIters}`;
+      let text = `day ${team1Score} | night ${team2Score} | ${fmtSpeedFactor}x speed | iters ${fmtIters}`
+      if (speedRenormalize) text += ' | renormalize';
+      scoreElement.textContent = text;
     }
 
     addEventListener("keypress", (event) => {
+      console.log(event.keyCode);
+      // space
+      if (event.keyCode == 32) {
+        speedRenormalize = !speedRenormalize;
+      }
+      // - or _
       if (event.keyCode == 45 || event.keyCode == 95) {
         speedFactor = Math.floor(speedFactor / 2);
       }
+      // + or =
       if (event.keyCode == 43 || event.keyCode == 61) {
         speedFactor = Math.max(speedFactor * 2, 1);
       }
