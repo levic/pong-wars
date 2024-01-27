@@ -63,8 +63,8 @@
       <canvas id="pongCanvas" width="800" height="800"></canvas>
       <div id="score"></div>
       <p id="made">
-        made by <a href="https://koenvangilst.nl">Koen van Gilst</a> | source on
-        <a href="https://github.com/vnglst/pong-wars">github</a>
+        made by <a href="https://koenvangilst.nl">Koen van Gilst</a> with additions by <a href="https://www.levi.id.au/">Levi Cameron</a> <br/>
+        source on <a href="https://github.com/levic/pong-wars">github</a> | +/- to change speedFactorFactor
       </p>
     </div>
   </body>
@@ -167,9 +167,10 @@
       return { dx: updatedDx, dy: updatedDy };
     }
 
+    let iterations = 0;
+    let speedFactor = 1;
 
-
-    function updateScoreElement(iters) {
+    function updateScoreElement() {
       let team1Score = 0;
       let team2Score = 0;
       for (let i = 0; i < numSquaresX; i++) {
@@ -182,21 +183,23 @@
         }
       }
 
-      const options = {
-        style: 'decimal',  // Other options: 'currency', 'percent', etc.
-        maximumFractionDigits: 0,
-      };
-      const formattedIters = iters.toLocaleString('en-US', options);
-
-      scoreElement.textContent = `day ${team1Score} | night ${team2Score} | iters ${formattedIters}`;
+      const options = { style: 'decimal', maximumFractionDigits: 0 };
+      const fmtIters = iterations.toLocaleString('en-US', options);
+      const fmtSpeedFactor = speedFactor.toLocaleString('en-US', options);
+      scoreElement.textContent = `day ${team1Score} | night ${team2Score} | ${fmtSpeedFactor}x speed | iters ${fmtIters}`;
     }
 
-    let counter = 0;
-    let iterNoDisplay = 1;
-    function draw() {
-      counter++;
+    addEventListener("keypress", (event) => {
+      if (event.keyCode == 45 || event.keyCode == 95) {
+        speedFactor = Math.floor(speedFactor / 2);
+      }
+      if (event.keyCode == 43 || event.keyCode == 61) {
+        speedFactor = Math.max(speedFactor * 2, 1);
+      }
+    });
 
-      for (let j = 0; j < iterNoDisplay; j++, counter++) {
+    function draw() {
+      for (let j = 0; j < speedFactor; j++, iterations++) {
         let bounce1 = updateSquareAndBounce(x1, y1, dx1, dy1, TEAM1);
         dx1 = bounce1.dx;
         dy1 = bounce1.dy;
@@ -242,7 +245,7 @@
       drawSquares();
       drawBall(x1, y1, TEAM1_BALL);
       drawBall(x2, y2, TEAM2_BALL);
-      updateScoreElement(counter);
+      updateScoreElement();
 
       requestAnimationFrame(draw);
     }
